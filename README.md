@@ -1,0 +1,2 @@
+# wgmgr
+wireguard manager
