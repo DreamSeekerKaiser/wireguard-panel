@@ -35,6 +35,7 @@ cat >> /etc/wireguard/wg0.conf <<-EOF
 [peer]
 PublicKey = $c2
 AllowedIPs = 10.0.0.$userip/32
+EOF
 
 
 
