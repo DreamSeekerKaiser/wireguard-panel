@@ -66,6 +66,7 @@ wireguard_install(){
     sudo yum -y install wireguard-dkms wireguard-tools
     mkdir /etc/wireguard
     mkdir /etc/wireguard/user
+    mkdir /etc/wireguard/userkey
     cd /etc/wireguard
     wg genkey | tee sprivatekey | wg pubkey > spublickey
     s1=$(cat sprivatekey)
