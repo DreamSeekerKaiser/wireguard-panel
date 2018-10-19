@@ -35,7 +35,7 @@ update_kernel(){
 	fi
 }
 
-#生成随机端口
+#生成随机端口 
 rand(){
     min=$1
     max=$(($2-$min+1))
