@@ -30,7 +30,7 @@ EOF
 #使用命令动态加载peer
 wg set wg0 peer $c2 allowed-ips 10.0.0.$userip/32
 
-#静态化写入配置文件
+#持久化写入配置文件
 cat >> /etc/wireguard/wg0.conf <<-EOF
 [peer]
 PublicKey = $c2
