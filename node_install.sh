@@ -70,6 +70,7 @@ wireguard_install(){
     cd /etc/wireguard
     wg genkey | tee sprivatekey | wg pubkey > spublickey
     s1=$(cat sprivatekey)
+    serverip=$(curl icanhazip.com)
     port=$(rand 10000 60000)
     chmod 777 -R /etc/wireguard
     systemctl stop firewalld
@@ -93,6 +94,7 @@ DNS = 8.8.8.8
 MTU = 1420
 EOF
 
+    echo "$serverip,$port,1" > global
     wg-quick up wg0
     systemctl enable wg-quick@wg0
 }
