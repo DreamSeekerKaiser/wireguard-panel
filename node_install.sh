@@ -15,7 +15,7 @@ fi
 #更新内核
 update_kernel(){
 
-    sudo yum -y install epel-release
+    yum -y install epel-release
     sed -i "0,/enabled=0/s//enabled=1/" /etc/yum.repos.d/epel.repo
     yum remove -y kernel-devel
     rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
@@ -24,8 +24,8 @@ update_kernel(){
     yum -y --enablerepo=elrepo-kernel install kernel-ml
     sed -i "s/GRUB_DEFAULT=saved/GRUB_DEFAULT=0/" /etc/default/grub
     grub2-mkconfig -o /boot/grub2/grub.cfg
-    wget http://elrepo.org/linux/kernel/el7/x86_64/RPMS/kernel-ml-devel-4.18.12-1.el7.elrepo.x86_64.rpm
-    rpm -ivh kernel-ml-devel-4.18.12-1.el7.elrepo.x86_64.rpm
+    wget https://elrepo.org/linux/kernel/el7/x86_64/RPMS/kernel-ml-devel-4.19.1-1.el7.elrepo.x86_64.rpm
+    rpm -ivh kernel-ml-devel-4.19.1-1.el7.elrepo.x86_64.rpm
     yum -y --enablerepo=elrepo-kernel install kernel-ml-devel
     read -p "需要重启VPS，再次执行脚本选择安装wireguard，是否现在重启 ? [Y/n] :" yn
 	[ -z "${yn}" ] && yn="y"
@@ -43,33 +43,19 @@ rand(){
     echo $(($num%$max+$min))  
 }
 
-config_client(){
-cat > /etc/wireguard/client.conf <<-EOF
-[Interface]
-PrivateKey = $c1
-Address = 10.0.0.2/24 
-DNS = 8.8.8.8
-MTU = 1420
-[Peer]
-PublicKey = $s2
-Endpoint = $serverip:$port
-AllowedIPs = 0.0.0.0/0, ::0/0
-PersistentKeepalive = 25
-EOF
-
-}
-
 #centos7安装wireguard
 wireguard_install(){
-    sudo curl -Lo /etc/yum.repos.d/wireguard.repo https://copr.fedorainfracloud.org/coprs/jdoss/wireguard/repo/epel-7/jdoss-wireguard-epel-7.repo
-    sudo yum install -y dkms gcc-c++ gcc-gfortran glibc-headers glibc-devel libquadmath-devel libtool systemtap systemtap-devel
-    sudo yum -y install wireguard-dkms wireguard-tools
+    curl -Lo /etc/yum.repos.d/wireguard.repo https://copr.fedorainfracloud.org/coprs/jdoss/wireguard/repo/epel-7/jdoss-wireguard-epel-7.repo
+    yum install -y dkms gcc-c++ gcc-gfortran glibc-headers glibc-devel libquadmath-devel libtool systemtap systemtap-devel
+    yum -y install wireguard-dkms wireguard-tools
     mkdir /etc/wireguard
-    mkdir /etc/wireguard/user
-    mkdir /etc/wireguard/userkey
     cd /etc/wireguard
     wg genkey | tee sprivatekey | wg pubkey > spublickey
+    wg genkey | tee cprivatekey | wg pubkey > cpublickey
     s1=$(cat sprivatekey)
+    s2=$(cat spublickey)
+    c1=$(cat cprivatekey)
+    c2=$(cat cpublickey)
     serverip=$(curl icanhazip.com)
     port=$(rand 10000 60000)
     chmod 777 -R /etc/wireguard
@@ -78,11 +64,14 @@ wireguard_install(){
     yum install -y iptables-services 
     systemctl enable iptables 
     systemctl start iptables 
+    iptables -P INPUT ACCEPT
+    iptables -P OUTPUT ACCEPT
+    iptables -P FORWARD ACCEPT
     iptables -F
     service iptables save
     service iptables restart
     echo 1 > /proc/sys/net/ipv4/ip_forward
-    echo "net.ipv4.ip_forward = 1" > /etc/sysctl.conf	
+    echo "net.ipv4.ip_forward = 1" > /etc/sysctl.conf		
 cat > /etc/wireguard/wg0.conf <<-EOF
 [Interface]
 PrivateKey = $s1
@@ -94,7 +83,6 @@ DNS = 8.8.8.8
 MTU = 1420
 EOF
 
-    echo "$serverip,$port,1" > global
     wg-quick up wg0
     systemctl enable wg-quick@wg0
 }
